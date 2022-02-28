@@ -3,7 +3,7 @@ import * as THREE from "three";
 
 function createTable() {
     const geometry = new THREE.PlaneGeometry(1024, 1024);
-    const texture = new THREE.ImageUtils.loadTexture('../../../static/assets/textures/table.jpg');
+    const texture = new THREE.TextureLoader().load('../../../static/assets/textures/table.jpg');
     texture.wrapT = THREE.RepeatWrapping;
     texture.wrapS = THREE.RepeatWrapping;
     texture.repeat.set(1, 1);
@@ -14,6 +14,7 @@ function createTable() {
     const plane = new THREE.Mesh(geometry, material);
     plane.rotation.x = -Math.PI / 2;
     return plane;
+
 }
 
 function createMaj(width, height, depth1, depth2, type, number, color = 0xf18f68) {
@@ -28,7 +29,7 @@ function createMaj(width, height, depth1, depth2, type, number, color = 0xf18f68
     back.parent = group;
     group.add(back);
     const geometry2 = new THREE.BoxGeometry(width, height, depth2);
-    const texture1 = new THREE.ImageUtils.loadTexture('../../../static/assets/textures/top.png');
+    const texture1 = new THREE.TextureLoader().load('../../../static/assets/textures/top.png');
     const material2 = new THREE.MeshPhongMaterial({
         color: 0xDFDFDC,
         specular: 0xDFDFDC,
@@ -38,13 +39,13 @@ function createMaj(width, height, depth1, depth2, type, number, color = 0xf18f68
     const topMaterial = new THREE.MeshBasicMaterial({
         map: texture1
     })
-    const front = new THREE.Mesh(geometry2, [material2, material2, topMaterial, topMaterial, material2, material2]);
+    const front = new THREE.Mesh(geometry2, [topMaterial, topMaterial, topMaterial, topMaterial, material2, material2]);
     front.position.set(0, 0, depth2 / 2);
     front.parent = group;
     group.add(front);
 
     const geometry3 = new THREE.PlaneGeometry(width - 4, height - 4);
-    const texture = new THREE.ImageUtils.loadTexture('../../../static/assets/textures/majs/' + type + '/' + number + '.png');
+    const texture = new THREE.TextureLoader().load('../../../static/assets/textures/majs/' + type + '/' + number + '.png');
     texture.repeat.set(1, 1);
     const mesh = new THREE.Mesh(geometry3, new THREE.MeshBasicMaterial({
         map: texture,
@@ -73,14 +74,14 @@ function initMajs(majConfig, startX, startZ) {
             for (let inx = 0; inx < ws.length; inx++) {
                 const maj = createMaj(majConfig.width, majConfig.height, majConfig.depth1, majConfig.depth2, type, ws[inx]);
                 maj.rotation.x = -Math.PI / 2;
-                maj.position.set(startX + (majConfig.width + 2) * inx, (majConfig.depth1 + majConfig.depth2) / 2 + 1, z);
+                maj.position.set(startX + (majConfig.width + 2) * inx,  majConfig.depth2/ 2 + 1, z);
                 majs.push(maj);
             }
         } else {
             for (let inx = 0; inx < 10; inx++) {
                 const maj = createMaj(majConfig.width, majConfig.height, majConfig.depth1, majConfig.depth2, type, inx);
                 maj.rotation.x = -Math.PI / 2;
-                maj.position.set(startX + (majConfig.width + 2) * inx, (majConfig.depth1 + majConfig.depth2) / 2 + 1, z);
+                maj.position.set(startX + (majConfig.width + 2) * inx, majConfig.depth2/ 2 + 1, z);
                 majs.push(maj);
             }
         }

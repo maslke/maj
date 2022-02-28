@@ -60,7 +60,6 @@ const majs = initMajs(majConfig, firstHandMajPosition.x, -100);
 majs.forEach(maj => {
     maj.typeName = 'mountain';
     scene.add(maj);
-    //majList.push(...maj.children);
     majList.push(maj.children[maj.children.length - 1]);
 });
 

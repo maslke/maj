@@ -23,7 +23,7 @@ function majHandMousemoveHandler(rayCaster, majList, hands, canvas, camera, vect
                 hands.forEach(maj => {
                     maj.position.y = vector3.y;
                 });
-                selectedMesh.parent.position.y += 20;
+                selectedMesh.parent.position.y += 15;
             }
         } else {
             hands.forEach(maj => {
