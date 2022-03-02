@@ -23,7 +23,7 @@ module.exports = {
         new HtmlWebpackPlugin({
             filename: 'index.html',
             template: './src/index.html',
-            title: 'torus-list',
+            title: 'maj',
             inject: 'body',
             hash: true,
             chunks: ['index']
