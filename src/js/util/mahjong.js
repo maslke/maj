@@ -11,11 +11,30 @@ function createTable() {
         map: texture,
         side: THREE.DoubleSide
     });
+
     const plane = new THREE.Mesh(geometry, material);
     plane.rotation.x = -Math.PI / 2;
     return plane;
-
 }
+
+
+
+function createTableBg() {
+    const geometry = new THREE.PlaneGeometry(270, 270);
+    const texture = new THREE.TextureLoader().load('../../../static/assets/textures/bg.png');
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.repeat.set(1, 1);
+    const material = new THREE.MeshBasicMaterial({
+        map: texture,
+        transparent: true
+    });
+
+    const plane = new THREE.Mesh(geometry, material);
+    plane.rotation.x = -Math.PI / 2;
+    return plane;
+}
+
 
 function createMaj(width, height, depth1, depth2, type, number, color = 0xf18f68) {
     const group = new THREE.Group();
@@ -168,6 +187,30 @@ function sortHands(hands) {
 }
 
 /**
+ * 弃牌
+ * @param maj 丢弃的牌
+ * @param discards 弃牌堆
+ * @param discardConfig 弃牌配置
+ * @param majConfig 麻将大小配置
+ */
+function discard(maj, discards, discardConfig, majConfig) {
+    const {colCount, x, y, z} = discardConfig;
+    const {width, depth1, height} = majConfig;
+
+    const row = parseInt(discards.length / colCount);
+    const col = discards.length % colCount;
+    discards.push(maj);
+    maj.position.set(x + (width + 1) * col, depth1 + 1, z + (height + 1) * row);
+    maj.rotation.x = - Math.PI / 2;
+}
+
+function deal(majs, majConfig) {
+    const {type, number} = majs.pop();
+    const {width, height, depth1, depth2} = majConfig;
+    return createMaj(width, height, depth1, depth2, type, number);
+}
+
+/**
  * 对手牌的位置进行调整
  * @param hands 手牌
  * @param majConfig 单个麻将大小配置
@@ -179,4 +222,4 @@ function resetPosition(hands, majConfig, vector3) {
     }
 }
 
-export {createTable, createMaj, initMajs, shuffle, initStartMajs, sortHands, resetPosition};
+export {createTable, createTableBg, createMaj, initMajs, shuffle, initStartMajs, sortHands, resetPosition, deal, discard};

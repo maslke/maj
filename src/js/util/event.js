@@ -1,5 +1,7 @@
 import * as THREE from "three";
 import * as MajPosition from './maj-position';
+import {discard, deal, sortHands, resetPosition} from './mahjong';
+import {TWEEN} from "three/examples/jsm/libs/tween.module.min";
 
 function convertMouseVector(event, canvas) {
     let getBoundingClientRect = canvas.getBoundingClientRect();
@@ -33,7 +35,7 @@ function majHandMousemoveHandler(rayCaster, majList, hands, canvas, camera, vect
     }
 }
 
-function majHandMouseClickHandler(rayCaster, majList, hands, scene, canvas, camera) {
+function majHandMouseClickHandler(rayCaster, majList, hands, scene, canvas, camera, discards, discardConfig, majConfig, mountains, vector3) {
     return function (event) {
         const mouse = convertMouseVector(event, canvas);
         rayCaster.setFromCamera(mouse, camera);
@@ -56,14 +58,26 @@ function majHandMouseClickHandler(rayCaster, majList, hands, scene, canvas, came
                         break;
                     }
                 }
-                selectedMesh.parent.children.forEach(mesh => {
-                    mesh.geometry.dispose();
-                })
-                scene.remove(selectedMesh.parent);
+                discard(selectedMesh.parent, discards, discardConfig, majConfig)
+
+                sortHands(hands);
+                resetPosition(hands, majConfig, vector3);
+
+                const maj = deal(mountains, majConfig);
+                hands.push(maj);
+                maj.position.set(1000, vector3.y, vector3.z);
+                maj.tween = new TWEEN.Tween(maj.position).to({x: vector3.x + (majConfig.width + 1) * (hands.length - 1) + 5}, 500)
+                    .easing(TWEEN.Easing.Quadratic.InOut);
+                scene.add(maj);
+                maj.typeName = MajPosition.HAND;
+                majList.push(maj.children[maj.children.length - 1]);
+                maj.tween.start();
             }
         }
     }
 }
+
+
 
 function majMountainMouseClickHandler(rayCaster, majList, hands, scene, canvas, camera, vector3, majConfig) {
     return function (event) {

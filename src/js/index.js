@@ -8,7 +8,7 @@ import {
     createVector3,
     shouldResize
 } from "./util/common";
-import {createTable, initMajs, shuffle, initStartMajs, sortHands, resetPosition} from "./util/mahjong";
+import {createTable, initMajs, shuffle, initStartMajs, sortHands, resetPosition, createTableBg} from "./util/mahjong";
 import * as EventType from "./util/event-type";
 import * as MajPosition from './util/maj-position';
 import {majHandMousemoveHandler, majHandMouseClickHandler, majMountainMouseClickHandler} from "./util/event";
@@ -43,6 +43,8 @@ orbitControls.update();
 const table = createTable();
 scene.add(table);
 
+
+
 const majConfig = {
     width: 40,
     height: 60,
@@ -56,13 +58,6 @@ const startZ = 300;
 const firstHandMajPosition = createVector3(startX, startY, startZ);
 
 let majList = [];
-
-// const majs = initMajs(majConfig, firstHandMajPosition.x, -100);
-// majs.forEach(maj => {
-//     maj.typeName = 'mountain';
-//     scene.add(maj);
-//     majList.push(maj.children[maj.children.length - 1]);
-// });
 
 // shuffle
 const mountains = shuffle();
@@ -94,7 +89,6 @@ hands.forEach((maj, inx) => {
                                 });
                             }
                         })
-
                     }
                 });
 
@@ -115,6 +109,12 @@ first.start();
 
 // 弃牌
 const discards = [];
+const discardConfig = {
+    x: -200,
+    y: 0,
+    z: 0,
+    colCount: 6
+}
 
 
 const rayCaster = new THREE.Raycaster();
@@ -122,10 +122,8 @@ const rayCaster = new THREE.Raycaster();
 document.addEventListener(EventType.MOUSEMOVE,
     majHandMousemoveHandler(rayCaster, majList, hands, canvas, camera, firstHandMajPosition));
 
-// document.addEventListener(EventType.CLICK,
-//     majMountainMouseClickHandler(rayCaster, majList, hands, scene, canvas, camera, firstHandMajPosition, majConfig));
 document.addEventListener(EventType.CLICK,
-    majHandMouseClickHandler(rayCaster, majList, hands, scene, canvas, camera));
+    majHandMouseClickHandler(rayCaster, majList, hands, scene, canvas, camera, discards, discardConfig, majConfig, mountains, firstHandMajPosition));
 
 function render() {
     if (shouldResize(renderer)) {
