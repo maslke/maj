@@ -8,10 +8,10 @@ import {
     createVector3,
     shouldResize
 } from "./util/common";
-import {createTable, initMajs, shuffle, initStartMajs, sortHands, resetPosition, createTableBg} from "./util/mahjong";
+import {createTable, shuffle, initStartMajs, sortHands, resetPosition} from "./util/mahjong";
 import * as EventType from "./util/event-type";
 import * as MajPosition from './util/maj-position';
-import {majHandMousemoveHandler, majHandMouseClickHandler, majMountainMouseClickHandler} from "./util/event";
+import {majHandMousemoveHandler, majHandMouseClickHandler} from "./util/event";
 
 const canvas = document.querySelector("#canvas");
 
@@ -62,6 +62,15 @@ let majList = [];
 // shuffle
 const mountains = shuffle();
 
+// 弃牌
+const discards = [];
+const discardConfig = {
+    x: -1 * majConfig.width * 2.5,
+    y: 0,
+    z: 0,
+    colCount: 6
+}
+
 // 起始手牌
 const hands = initStartMajs(mountains, majList, majConfig);
 let tween = new TWEEN.Tween();
@@ -107,14 +116,7 @@ hands.forEach((maj, inx) => {
 
 first.start();
 
-// 弃牌
-const discards = [];
-const discardConfig = {
-    x: -200,
-    y: 0,
-    z: 0,
-    colCount: 6
-}
+
 
 
 const rayCaster = new THREE.Raycaster();
