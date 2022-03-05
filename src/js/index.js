@@ -12,6 +12,7 @@ import {createTable, shuffle, initStartMajs, sortHands, resetPosition} from "./u
 import * as EventType from "./util/event-type";
 import * as MajPosition from './util/maj-position';
 import {majHandMousemoveHandler, majHandMouseClickHandler} from "./util/event";
+import {win} from "./util/game";
 
 const canvas = document.querySelector("#canvas");
 
@@ -38,7 +39,7 @@ scene.add(spotLight);
 
 const orbitControls = createOrbitControls(camera, canvas);
 orbitControls.update();
-// orbitControls.enabled = false;
+orbitControls.enabled = false;
 
 const table = createTable();
 scene.add(table);
@@ -75,6 +76,7 @@ const discardConfig = {
 const hands = initStartMajs(mountains, majList, majConfig);
 let tween = new TWEEN.Tween();
 const first = tween;
+let last;
 hands.forEach((maj, inx) => {
     majList.push(maj.children[maj.children.length - 1]);
     maj.typeName = MajPosition.HAND;
@@ -82,28 +84,7 @@ hands.forEach((maj, inx) => {
         maj.position.set(1000, firstHandMajPosition.y, firstHandMajPosition.z)
         maj.tween = new TWEEN.Tween(maj.position).to({x: firstHandMajPosition.x + (majConfig.width + 1) * inx + 10}, 120)
             .easing(TWEEN.Easing.Quadratic.InOut);
-        maj.tween.onUpdate(function(object) {
-            if (object.x === firstHandMajPosition.x + (majConfig.width + 1) * inx + 10) {
-                hands.forEach((maj2, index) => {
-                    const t = new TWEEN.Tween(maj2.rotation).to({x: Math.PI / 2}, 500).easing(TWEEN.Easing.Quadratic.InOut);
-                    t.start();
-                    if (index === hands.length - 1) {
-                        t.onUpdate(function (obj) {
-                            if (obj.x === Math.PI / 2) {
-                                sortHands(hands);
-                                resetPosition(hands, majConfig, firstHandMajPosition);
-                                hands.forEach((maj2) => {
-                                    const t = new TWEEN.Tween(maj2.rotation).to({x: 0}, 500).easing(TWEEN.Easing.Quadratic.InOut);
-                                    t.start();
-                                });
-                            }
-                        })
-                    }
-                });
-
-            }
-        });
-
+        last = maj.tween;
     } else {
         maj.position.set(1000, firstHandMajPosition.y, firstHandMajPosition.z)
         maj.tween = new TWEEN.Tween(maj.position).to({x: firstHandMajPosition.x + (majConfig.width + 1) * inx}, 120)
@@ -115,7 +96,25 @@ hands.forEach((maj, inx) => {
 });
 
 first.start();
-
+last.onComplete(function() {
+    hands.forEach((maj2, index) => {
+        const t = new TWEEN.Tween(maj2.rotation).to({x: Math.PI / 2}, 500).easing(TWEEN.Easing.Quadratic.InOut);
+        t.start();
+        if (index === hands.length - 1) {
+            t.onComplete(function() {
+                sortHands(hands);
+                resetPosition(hands, majConfig, firstHandMajPosition);
+                hands.forEach((maj2) => {
+                    const t = new TWEEN.Tween(maj2.rotation).to({x: 0}, 500).easing(TWEEN.Easing.Quadratic.InOut);
+                    t.start();
+                });
+                if (win(hands)) {
+                    alert('win');
+                }
+            })
+        }
+    });
+});
 
 
 
@@ -125,7 +124,14 @@ document.addEventListener(EventType.MOUSEMOVE,
     majHandMousemoveHandler(rayCaster, majList, hands, canvas, camera, firstHandMajPosition));
 
 document.addEventListener(EventType.CLICK,
-    majHandMouseClickHandler(rayCaster, majList, hands, scene, canvas, camera, discards, discardConfig, majConfig, mountains, firstHandMajPosition));
+    function (event) {
+        majHandMouseClickHandler(rayCaster, majList, hands, scene, canvas, camera, discards, discardConfig, majConfig, mountains, firstHandMajPosition)(event);
+        hands[hands.length - 1].tween.onComplete(function() {
+            if (win(hands)) {
+                alert('win');
+            }
+        });
+    });
 
 function render() {
     if (shouldResize(renderer)) {

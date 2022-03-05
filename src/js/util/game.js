@@ -15,7 +15,7 @@ function convert(hands) {
             number = 5;
         }
         if (type === 'm') {
-            majs.push(number + 1);
+            majs.push(number);
         } else if (type === 'p') {
             majs.push(number + 10);
         } else if (type === 's') {
@@ -24,7 +24,7 @@ function convert(hands) {
             majs.push(30 + 2 * number - 1);
         }
     }
-    majs.sort();
+    majs.sort((a, b) => a - b);
     return majs;
 }
 
@@ -43,12 +43,14 @@ function pickDouble(majs) {
 }
 
 function allTriple(hands) {
-    if (hands.length < 3) {
-        return false;
-    }
     if (hands.length === 0) {
         return true;
     }
+
+    if (hands.length < 3) {
+        return false;
+    }
+
     const val = hands[0];
     let copy;
     if (hands[1] === val && hands[2] === val) {
@@ -61,8 +63,9 @@ function allTriple(hands) {
         let inx1 = hands.indexOf(val + 1);
         let inx2 = hands.indexOf(val + 2);
         copy = hands.slice(0, hands.length);
-        copy.splice(inx1, 1);
-        copy.splice(inx2 - 1, 1);
+        copy.splice(0, 1);
+        copy.splice(inx1 - 1, 1);
+        copy.splice(inx2 - 2, 1);
         return allTriple(copy);
     }
     return false;
@@ -73,11 +76,14 @@ function allTriple(hands) {
  */
 
 function win(hands) {
-    const majs = convert(hands);
+    let majs = convert(hands);
     const doubles = pickDouble(majs);
+    if (doubles.length === 0) {
+        return false;
+    }
     for (let inx in doubles) {
         const copy = majs.slice(0, majs.length);
-        copy.splice(inx, 2);
+        copy.splice(doubles[inx], 2);
         if (allTriple(copy)) {
             return true;
         }
