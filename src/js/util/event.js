@@ -23,9 +23,13 @@ function majHandMousemoveHandler(rayCaster, majList, hands, canvas, camera, vect
             const selectedMesh = intersects[0].object;
             if (selectedMesh.parent.typeName === MajPosition.HAND) {
                 hands.forEach(maj => {
-                    maj.position.y = vector3.y;
+                    if (maj !== selectedMesh.parent) {
+                        maj.position.y = vector3.y;
+                    }
                 });
-                selectedMesh.parent.position.y += 15;
+                if (selectedMesh.parent.position.y === vector3.y) {
+                    selectedMesh.parent.position.y += 15;
+                }
             }
         } else {
             hands.forEach(maj => {
