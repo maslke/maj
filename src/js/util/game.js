@@ -72,11 +72,50 @@ function allTriple(hands) {
 }
 
 /**
+ * 七对子
+ * @param majs
+ * @returns {boolean}
+ */
+function double7(majs) {
+    const mapper = {};
+    for (let inx in majs) {
+        let val = majs[inx];
+        if (mapper.hasOwnProperty(val)) {
+            mapper[val] = mapper[val] + 1;
+        } else {
+            mapper[val] = 1;
+        }
+    }
+    for (let key in mapper) {
+        if (mapper[key] !== 2) return false;
+    }
+    return true;
+}
+
+/**
+ * 国士无双
+ * 打表实现
+ * @param majs
+ */
+function all19(majs) {
+    const str = majs.toString();
+    const array = [1,9,11,19,21,29,31,33,35,37,39,41,43];
+    for (let inx = 0; inx < 13; inx++) {
+        array.splice(inx, 0, array[inx]);
+        if (array.toString() === str) {
+            return true;
+        }
+        array.splice(inx, 1);
+    }
+    return false;
+}
+/**
  * win or not ?
  */
 
 function win(hands) {
     let majs = convert(hands);
+    if (double7(majs) || all19(majs)) return true;
     const doubles = pickDouble(majs);
     if (doubles.length === 0) {
         return false;
