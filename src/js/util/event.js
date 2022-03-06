@@ -67,17 +67,10 @@ function majHandMouseClickHandler(rayCaster, majList, hands, scene, canvas, came
                 sortHands(hands);
                 resetPosition(hands, majConfig, vector3);
 
-                const maj = deal(mountains, majConfig);
-                hands.push(maj);
-                maj.position.set(1000, vector3.y, vector3.z);
-                maj.tween = new TWEEN.Tween(maj.position).to({x: vector3.x + (majConfig.width + 1) * (hands.length - 1) + 5}, 500)
-                    .easing(TWEEN.Easing.Quadratic.InOut);
-                scene.add(maj);
-                maj.typeName = MajPosition.HAND;
-                majList.push(maj.children[maj.children.length - 1]);
-                maj.tween.start();
+                return true;
             }
         }
+        return false;
     }
 }
 

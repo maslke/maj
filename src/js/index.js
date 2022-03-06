@@ -8,7 +8,7 @@ import {
     createVector3,
     shouldResize
 } from "./util/common";
-import {createTable, shuffle, initStartMajs, sortHands, resetPosition} from "./util/mahjong";
+import {createTable, shuffle, initStartMajs, sortHands, resetPosition, deal} from "./util/mahjong";
 import * as EventType from "./util/event-type";
 import * as MajPosition from './util/maj-position';
 import {majHandMousemoveHandler, majHandMouseClickHandler} from "./util/event";
@@ -117,7 +117,6 @@ last.onComplete(function() {
 });
 
 
-
 const rayCaster = new THREE.Raycaster();
 
 document.addEventListener(EventType.MOUSEMOVE,
@@ -125,7 +124,28 @@ document.addEventListener(EventType.MOUSEMOVE,
 
 document.addEventListener(EventType.CLICK,
     function (event) {
-        majHandMouseClickHandler(rayCaster, majList, hands, scene, canvas, camera, discards, discardConfig, majConfig, mountains, firstHandMajPosition)(event);
+        const discard = majHandMouseClickHandler(rayCaster, majList, hands, scene, canvas, camera, discards, discardConfig, majConfig, mountains, firstHandMajPosition)(event);
+        if (!discard) {
+            return;
+        }
+        for (let inx = 0; inx < 3; inx++) {
+            if (mountains.length === 0) break;
+            mountains.pop();
+        }
+        if (mountains.length === 0) {
+            return;
+        }
+
+        const maj = deal(mountains, majConfig);
+        hands.push(maj);
+        maj.position.set(1000, firstHandMajPosition.y, firstHandMajPosition.z);
+        maj.tween = new TWEEN.Tween(maj.position).to({x: firstHandMajPosition.x + (majConfig.width + 1) * (hands.length - 1) + 5}, 500)
+            .easing(TWEEN.Easing.Quadratic.InOut);
+        scene.add(maj);
+        maj.typeName = MajPosition.HAND;
+        majList.push(maj.children[maj.children.length - 1]);
+        maj.tween.start();
+
         hands[hands.length - 1].tween.onComplete(function() {
             if (win(hands)) {
                 alert('win');
