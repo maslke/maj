@@ -12,7 +12,12 @@ import {
     resetPosition,
     deal,
     winAnimate,
-    createWinBtn, createStartBtn, createSkipBtn
+    createWinBtn,
+    createStartBtn,
+    createSkipBtn,
+    createBg,
+    createFinishBtn,
+    clearMajs
 } from "./util/mahjong";
 import * as EventType from "./util/event-type";
 import * as MajPosition from './util/maj-position';
@@ -31,7 +36,7 @@ const far = 2000;
 
 const camera = createPerspectiveCamera(fov, aspect, near, far);
 camera.lookAt(0, 0, 0);
-camera.position.set(0, 600, 800);
+camera.position.set(0, 400, 700);
 scene.add(camera);
 
 
@@ -44,10 +49,13 @@ scene.add(spotLight);
 
 const orbitControls = createOrbitControls(camera, canvas);
 orbitControls.update();
-// orbitControls.enabled = false;
+orbitControls.enabled = false;
 
 const table = createTable();
 scene.add(table);
+const bg = createBg();
+bg.position.z = 1;
+scene.add(bg);
 const rayCaster = new THREE.Raycaster();
 
 const majConfig = {
@@ -59,12 +67,7 @@ const startY = majConfig.height / 2 + 1;
 const startZ = 300;
 const firstHandMajPosition = createVector3(startX, startY, startZ);
 
-let majList = [];
-// shuffle
-const mountains = shuffle();
 
-// 弃牌
-const discards = [];
 const discardConfig = {
     x: -1 * majConfig.width * 2.5, y: 0, z: 0, colCount: 6
 }
@@ -82,8 +85,14 @@ skipBtn.position.x = 100;
 skipBtn.position.z = 400;
 skipBtn.material.visible = false;
 scene.add(skipBtn);
+const finishBtn = createFinishBtn();
+finishBtn.material.visible = false;
+finishBtn.position.x = 0;
+finishBtn.position.z = 400;
+scene.add(finishBtn);
 
-const start = clickHandler(rayCaster, [startBtn], canvas,  camera, startCallback);
+
+const start = clickHandler(rayCaster, [startBtn], canvas, camera, startCallback);
 document.addEventListener(EventType.CLICK, start);
 
 function displayWinBtn() {
@@ -96,25 +105,89 @@ function hiddenWinBtn() {
     skipBtn.material.visible = false;
 }
 
+function displayStartBtn() {
+    startBtn.material.visible = true;
+}
+
+function hiddenAllBtn() {
+    hiddenWinBtn();
+    finishBtn.material.visible = false;
+}
+
 
 function startCallback() {
 
-    startBtn.material.visible = false;
-    document.removeEventListener(EventType.CLICK, start);
+    let majList = [];
+    let mountains = shuffle();
+    const discards = [];
 
-    const callback = clickHandler(rayCaster, [winBtn, skipBtn], canvas, camera, function(mesh) {
-        if (mesh === skipBtn) {
-            skipBtn.material.visible = false;
-            winBtn.material.visible = false;
-        } else if (mesh === winBtn) {
+    hiddenAllBtn();
+    clearMajs(scene);
+
+    // 起始手牌
+    const hands = initStartMajs(mountains, majList, majConfig);
+
+    const handClickHandler = function (event) {
+        const discard = majHandMouseClickHandler(rayCaster, majList, hands, scene, canvas, camera, discards, discardConfig, majConfig, mountains, firstHandMajPosition)(event);
+        if (!discard) {
+            return;
+        }
+        for (let inx = 0; inx < 3; inx++) {
+            if (mountains.length === 0) break;
+            mountains.pop();
+        }
+        if (mountains.length === 0) {
+            finishBtn.material.visible = true;
+            document.removeEventListener(EventType.MOUSEMOVE, moveHandler);
+            document.removeEventListener(EventType.CLICK, handClickHandler);
+            return;
+        }
+
+        const maj = deal(mountains, majConfig);
+        hands.push(maj);
+        maj.position.set(1000, firstHandMajPosition.y, firstHandMajPosition.z);
+        maj.tween = new TWEEN.Tween(maj.position).to({x: firstHandMajPosition.x + (majConfig.width + 1) * (hands.length - 1) + 5}, 500)
+            .easing(TWEEN.Easing.Quadratic.InOut);
+        scene.add(maj);
+        maj.typeName = MajPosition.HAND;
+        majList.push(maj.children[maj.children.length - 1]);
+        maj.tween.start();
+
+        hands[hands.length - 1].tween.onComplete(function () {
+            if (win(hands)) {
+                displayWinBtn();
+            }
+        });
+    }
+
+    const moveHandler = function (event) {
+        majHandMousemoveHandler(rayCaster, majList, hands, canvas, camera, firstHandMajPosition)(event);
+    };
+
+    document.removeEventListener(EventType.MOUSEMOVE, moveHandler);
+
+    document.removeEventListener(EventType.CLICK, handClickHandler);
+
+    startBtn.material.visible = false;
+
+    const callback = clickHandler(rayCaster, [winBtn, skipBtn], canvas, camera, function (mesh) {
+        if (!mesh.object.material.visible) {
+            return;
+        }
+        if (mesh.object === skipBtn) {
+            hiddenWinBtn();
+        } else if (mesh.object === winBtn) {
             winAnimate(hands, majConfig);
+            hiddenWinBtn();
+            displayStartBtn();
+            document.removeEventListener(EventType.MOUSEMOVE, moveHandler);
+            document.removeEventListener(EventType.CLICK, handClickHandler);
         }
     });
 
     document.addEventListener(EventType.CLICK, callback);
 
-    // 起始手牌
-    const hands = initStartMajs(mountains, majList, majConfig);
+
     let tween = new TWEEN.Tween();
     const first = tween;
     let last;
@@ -157,38 +230,9 @@ function startCallback() {
         });
     });
 
+    document.addEventListener(EventType.MOUSEMOVE, moveHandler);
 
-    document.addEventListener(EventType.MOUSEMOVE, majHandMousemoveHandler(rayCaster, majList, hands, canvas, camera, firstHandMajPosition));
-
-    document.addEventListener(EventType.CLICK, function (event) {
-        const discard = majHandMouseClickHandler(rayCaster, majList, hands, scene, canvas, camera, discards, discardConfig, majConfig, mountains, firstHandMajPosition)(event);
-        if (!discard) {
-            return;
-        }
-        for (let inx = 0; inx < 3; inx++) {
-            if (mountains.length === 0) break;
-            mountains.pop();
-        }
-        if (mountains.length === 0) {
-            return;
-        }
-
-        const maj = deal(mountains, majConfig);
-        hands.push(maj);
-        maj.position.set(1000, firstHandMajPosition.y, firstHandMajPosition.z);
-        maj.tween = new TWEEN.Tween(maj.position).to({x: firstHandMajPosition.x + (majConfig.width + 1) * (hands.length - 1) + 5}, 500)
-            .easing(TWEEN.Easing.Quadratic.InOut);
-        scene.add(maj);
-        maj.typeName = MajPosition.HAND;
-        majList.push(maj.children[maj.children.length - 1]);
-        maj.tween.start();
-
-        hands[hands.length - 1].tween.onComplete(function () {
-            if (win(hands)) {
-                winAnimate(hands, majConfig);
-            }
-        });
-    });
+    document.addEventListener(EventType.CLICK, handClickHandler);
 }
 
 

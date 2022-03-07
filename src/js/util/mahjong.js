@@ -11,9 +11,6 @@ function winAnimate(hands, majConfig) {
         maj.animate = new TWEEN.Tween(maj.rotation)
             .to({x: -Math.PI / 2}, 200 + 50 * inx).easing(TWEEN.Easing.Quadratic.InOut);
         maj.animate.start();
-        maj.animate.onComplete(function() {
-            maj.position.y = majConfig.depth1 + 1;
-        })
     });
 }
 
@@ -26,6 +23,23 @@ function createTable() {
     const material = new THREE.MeshBasicMaterial({
         map: texture,
         side: THREE.DoubleSide
+    });
+
+    const plane = new THREE.Mesh(geometry, material);
+    plane.rotation.x = -Math.PI / 2;
+    return plane;
+}
+
+function createBg() {
+    const geometry = new THREE.PlaneGeometry(270, 270);
+    const texture = new THREE.TextureLoader().load('../../../static/assets/textures/bg.png');
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.repeat.set(1, 1);
+    const material = new THREE.MeshBasicMaterial({
+        map: texture,
+        side: THREE.DoubleSide,
+        transparent: true
     });
 
     const plane = new THREE.Mesh(geometry, material);
@@ -58,6 +72,10 @@ function createWinBtn() {
 
 function createSkipBtn() {
     return createBtn('../../../static/assets/images/skip.png');
+}
+
+function createFinishBtn() {
+    return createBtn('../../../static/assets/images/draw.png');
 }
 
 /**
@@ -256,4 +274,14 @@ function resetPosition(hands, majConfig, vector3) {
     }
 }
 
-export {createTable, createWinBtn, createSkipBtn, createStartBtn, createMaj, initMajs, shuffle, initStartMajs, sortHands, resetPosition, deal, discard, winAnimate};
+function clearMajs(scene) {
+    const majs = [];
+    scene.children.forEach(maj => {
+        if (maj.typeName === MajPosition.MOUNTAIN || maj.typeName === MajPosition.HAND) {
+            majs.push(maj);
+        }
+    });
+    majs.forEach(maj => scene.remove(maj));
+}
+
+export {createTable, createWinBtn, createFinishBtn, createBg, createSkipBtn, createStartBtn, createMaj, initMajs, shuffle, initStartMajs, sortHands, resetPosition, deal, discard, clearMajs, winAnimate};
