@@ -1,3 +1,4 @@
+import * as MajType from './maj-type';
 /**
  * 将手牌转换为数字表示形式
  * m1-m9 -> 1-9
@@ -14,18 +15,22 @@ function convert(hands) {
         if (number === 0) {
             number = 5;
         }
-        if (type === 'm') {
-            majs.push(number);
-        } else if (type === 'p') {
-            majs.push(number + 10);
-        } else if (type === 's') {
-            majs.push(number + 20);
-        } else if (type === 'w') {
-            majs.push(30 + 2 * number - 1);
-        }
+        majs.push(convertToNumber(type, number));
     }
     majs.sort((a, b) => a - b);
     return majs;
+}
+
+function convertToNumber(type, number) {
+    if (type === MajType.M) {
+        return number;
+    } else if (type === MajType.P) {
+        return number + 10;
+    } else if (type === MajType.S) {
+        return number + 20;
+    } else if (type === MajType.W) {
+        return 30 + 2 * number - 1;
+    }
 }
 
 function pickDouble(majs) {

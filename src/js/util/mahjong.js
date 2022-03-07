@@ -1,5 +1,21 @@
 import * as THREE from "three";
-
+import {TWEEN} from "three/examples/jsm/libs/tween.module.min";
+import * as MajType from './maj-type';
+import * as MajPosition from './maj-position';
+/**
+ * 动画效果
+ * @param hands
+ */
+function winAnimate(hands, majConfig) {
+    hands.forEach((maj, inx) => {
+        maj.animate = new TWEEN.Tween(maj.rotation)
+            .to({x: -Math.PI / 2}, 200 + 50 * inx).easing(TWEEN.Easing.Quadratic.InOut);
+        maj.animate.start();
+        maj.animate.onComplete(function() {
+            maj.position.y = majConfig.depth1 + 1;
+        })
+    });
+}
 
 function createTable() {
     const geometry = new THREE.PlaneGeometry(1024, 1024);
@@ -18,21 +34,39 @@ function createTable() {
 }
 
 
-
-function createTableBg() {
-    const geometry = new THREE.PlaneGeometry(270, 270);
-    const texture = new THREE.TextureLoader().load('../../../static/assets/textures/bg.png');
+function createBtn(src) {
+    const geometry = new THREE.PlaneGeometry(210, 94);
+    const texture = new THREE.TextureLoader().load(src);
     texture.wrapT = THREE.RepeatWrapping;
     texture.wrapS = THREE.RepeatWrapping;
     texture.repeat.set(1, 1);
     const material = new THREE.MeshBasicMaterial({
         map: texture,
+        side: THREE.DoubleSide,
         transparent: true
     });
 
     const plane = new THREE.Mesh(geometry, material);
-    plane.rotation.x = -Math.PI / 2;
+    plane.position.y = 94 /2 + 1;
     return plane;
+}
+
+
+function createWinBtn() {
+   return createBtn('../../../static/assets/images/ron.png');
+}
+
+function createSkipBtn() {
+    return createBtn('../../../static/assets/images/skip.png');
+}
+
+/**
+ * 开始按钮
+ * 注：没有找到合适的开始按钮素材，使用开牌按钮来替代
+ * @returns {Mesh}
+ */
+function createStartBtn() {
+    return createBtn('../../../static/assets/images/open.png');
 }
 
 
@@ -83,13 +117,13 @@ function createMaj(width, height, depth1, depth2, type, number, color = 0xf18f68
 // 287 336
 // 40  56
 function initMajs(majConfig, startX, startZ) {
-    const types = ['m', 'p', 's', 'w'];
+    const types = [MajType.M, MajType.P, MajType.S, MajType.W];
     const majs = [];
     for (let i = 0; i < types.length; i++) {
         const type = types[i];
         const z = startZ + (majConfig.height + 2) * i;
         let start = 0, end = 10;
-        if (type === 'w') {
+        if (type === MajType.W) {
             start = 1;
             end = 8;
         }
@@ -100,7 +134,7 @@ function initMajs(majConfig, startX, startZ) {
             majs.push(maj);
         }
     }
-    majs.forEach(maj => maj.typeName = 'mountain');
+    majs.forEach(maj => maj.typeName = MajPosition.MOUNTAIN);
     return majs;
 }
 
@@ -110,7 +144,7 @@ function initMajs(majConfig, startX, startZ) {
  */
 function shuffle() {
     const majs = [];
-    const types = ['m', 'p', 's', 'w'];
+    const types = [MajType.M, MajType.P, MajType.S, MajType.W];
     const other = {
         'm': 1,
         'p': 2,
@@ -118,7 +152,7 @@ function shuffle() {
     }
     for (let inx = 0; inx < types.length; inx++) {
         const type = types[inx];
-        for (let i = 1, end = type === 'w' ? 7 : 9; i <= end; i++) {
+        for (let i = 1, end = type === MajType.W ? 7 : 9; i <= end; i++) {
             for (let j = 0; j < 4; j++) {
                 // 加入对宝牌的处理逻辑
                 if (other.hasOwnProperty(type) && other[type] > 0 && i === 5) {
@@ -222,4 +256,4 @@ function resetPosition(hands, majConfig, vector3) {
     }
 }
 
-export {createTable, createTableBg, createMaj, initMajs, shuffle, initStartMajs, sortHands, resetPosition, deal, discard};
+export {createTable, createWinBtn, createSkipBtn, createStartBtn, createMaj, initMajs, shuffle, initStartMajs, sortHands, resetPosition, deal, discard, winAnimate};

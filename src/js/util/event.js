@@ -1,7 +1,6 @@
 import * as THREE from "three";
 import * as MajPosition from './maj-position';
-import {discard, deal, sortHands, resetPosition} from './mahjong';
-import {TWEEN} from "three/examples/jsm/libs/tween.module.min";
+import {discard, resetPosition, sortHands} from './mahjong';
 
 function convertMouseVector(event, canvas) {
     let getBoundingClientRect = canvas.getBoundingClientRect();
@@ -39,6 +38,18 @@ function majHandMousemoveHandler(rayCaster, majList, hands, canvas, camera, vect
     }
 }
 
+function clickHandler(rayCaster, majList, canvas, camera, callback) {
+    return function(event) {
+        const mouse = convertMouseVector(event, canvas);
+        rayCaster.setFromCamera(mouse, camera);
+        const intersects = rayCaster.intersectObjects(majList, false);
+        if (intersects.length > 0) {
+            callback(intersects[0]);
+        }
+    }
+}
+
+
 function majHandMouseClickHandler(rayCaster, majList, hands, scene, canvas, camera, discards, discardConfig, majConfig, mountains, vector3) {
     return function (event) {
         const mouse = convertMouseVector(event, canvas);
@@ -55,11 +66,24 @@ function majHandMouseClickHandler(rayCaster, majList, hands, scene, canvas, came
 
                 for (let inx = 0, len = hands.length; inx < len; inx++) {
                     if (hands[inx] === selectedMesh.parent) {
-                        for (let inx2 = len - 1; inx2 > inx; inx2--) {
-                            hands[inx2].position.copy(hands[inx2 - 1].position);
+
+                        if (inx === hands.length - 1) {
+                            // 弃牌为最后一张
+                            for (let inx2 = len - 1; inx2 > inx; inx2--) {
+                                hands[inx2].position.copy(hands[inx2 - 1].position);
+                            }
+                            hands.splice(inx, 1);
+                            break;
+                        } else {
+                            // 弃牌为其它手牌
+                            for (let inx2 = len - 1; inx2 > inx; inx2--) {
+                                hands[inx2].position.copy(hands[inx2 - 1].position);
+                            }
+                            hands.splice(inx, 1);
+                            break;
                         }
-                        hands.splice(inx, 1);
-                        break;
+
+
                     }
                 }
                 discard(selectedMesh.parent, discards, discardConfig, majConfig)
@@ -74,30 +98,4 @@ function majHandMouseClickHandler(rayCaster, majList, hands, scene, canvas, came
     }
 }
 
-
-
-function majMountainMouseClickHandler(rayCaster, majList, hands, scene, canvas, camera, vector3, majConfig) {
-    return function (event) {
-        const mouse = convertMouseVector(event, canvas);
-        rayCaster.setFromCamera(mouse, camera);
-        const intersects = rayCaster.intersectObjects(majList, false);
-        if (intersects.length > 0) {
-            const selectedMesh = intersects[0].object;
-            if (selectedMesh.parent.typeName === MajPosition.MOUNTAIN) {
-                if (hands.length === 14) return;
-                const group = new THREE.Group();
-                group.attributes = selectedMesh.parent.attributes;
-                selectedMesh.parent.children.forEach(mesh => group.add(mesh.clone()));
-                group.typeName = MajPosition.HAND;
-                group.rotation.x = 0;
-                group.position.set(vector3.x + (majConfig.width + 1) * hands.length, vector3.y, vector3.z);
-
-                hands.push(group);
-                scene.add(group);
-                majList.push(...group.children);
-            }
-        }
-    }
-}
-
-export {majHandMousemoveHandler, majHandMouseClickHandler, majMountainMouseClickHandler}
+export {majHandMousemoveHandler, majHandMouseClickHandler, convertMouseVector, clickHandler}

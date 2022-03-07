@@ -2,16 +2,21 @@ require('../css/index.css');
 import * as THREE from 'three';
 import {TWEEN} from "three/examples/jsm/libs/tween.module.min";
 import {
-    createPerspectiveCamera,
-    createWebGLRenderer,
-    createOrbitControls,
-    createVector3,
-    shouldResize
+    createPerspectiveCamera, createWebGLRenderer, createOrbitControls, createVector3, shouldResize
 } from "./util/common";
-import {createTable, shuffle, initStartMajs, sortHands, resetPosition, deal} from "./util/mahjong";
+import {
+    createTable,
+    shuffle,
+    initStartMajs,
+    sortHands,
+    resetPosition,
+    deal,
+    winAnimate,
+    createWinBtn, createStartBtn, createSkipBtn
+} from "./util/mahjong";
 import * as EventType from "./util/event-type";
 import * as MajPosition from './util/maj-position';
-import {majHandMousemoveHandler, majHandMouseClickHandler} from "./util/event";
+import {majHandMousemoveHandler, majHandMouseClickHandler, clickHandler} from "./util/event";
 import {win} from "./util/game";
 
 const canvas = document.querySelector("#canvas");
@@ -39,18 +44,14 @@ scene.add(spotLight);
 
 const orbitControls = createOrbitControls(camera, canvas);
 orbitControls.update();
-orbitControls.enabled = false;
+// orbitControls.enabled = false;
 
 const table = createTable();
 scene.add(table);
-
-
+const rayCaster = new THREE.Raycaster();
 
 const majConfig = {
-    width: 40,
-    height: 60,
-    depth1: 6,
-    depth2: 20
+    width: 40, height: 60, depth1: 6, depth2: 20
 }
 
 const startX = -270;
@@ -59,71 +60,107 @@ const startZ = 300;
 const firstHandMajPosition = createVector3(startX, startY, startZ);
 
 let majList = [];
-
 // shuffle
 const mountains = shuffle();
 
 // 弃牌
 const discards = [];
 const discardConfig = {
-    x: -1 * majConfig.width * 2.5,
-    y: 0,
-    z: 0,
-    colCount: 6
+    x: -1 * majConfig.width * 2.5, y: 0, z: 0, colCount: 6
 }
 
-// 起始手牌
-const hands = initStartMajs(mountains, majList, majConfig);
-let tween = new TWEEN.Tween();
-const first = tween;
-let last;
-hands.forEach((maj, inx) => {
-    majList.push(maj.children[maj.children.length - 1]);
-    maj.typeName = MajPosition.HAND;
-    if (inx === 13) {
-        maj.position.set(1000, firstHandMajPosition.y, firstHandMajPosition.z)
-        maj.tween = new TWEEN.Tween(maj.position).to({x: firstHandMajPosition.x + (majConfig.width + 1) * inx + 10}, 120)
-            .easing(TWEEN.Easing.Quadratic.InOut);
-        last = maj.tween;
-    } else {
-        maj.position.set(1000, firstHandMajPosition.y, firstHandMajPosition.z)
-        maj.tween = new TWEEN.Tween(maj.position).to({x: firstHandMajPosition.x + (majConfig.width + 1) * inx}, 120)
-            .easing(TWEEN.Easing.Quadratic.InOut);
-    }
-    tween.chain(maj.tween);
-    tween = maj.tween;
-    scene.add(maj);
-});
 
-first.start();
-last.onComplete(function() {
-    hands.forEach((maj2, index) => {
-        const t = new TWEEN.Tween(maj2.rotation).to({x: Math.PI / 2}, 500).easing(TWEEN.Easing.Quadratic.InOut);
-        t.start();
-        if (index === hands.length - 1) {
-            t.onComplete(function() {
-                sortHands(hands);
-                resetPosition(hands, majConfig, firstHandMajPosition);
-                hands.forEach((maj2) => {
-                    const t = new TWEEN.Tween(maj2.rotation).to({x: 0}, 500).easing(TWEEN.Easing.Quadratic.InOut);
-                    t.start();
-                });
-                if (win(hands)) {
-                    alert('win');
-                }
-            })
+const startBtn = createStartBtn();
+scene.add(startBtn);
+const winBtn = createWinBtn();
+winBtn.material.visible = false;
+winBtn.position.x = -100;
+winBtn.position.z = 400;
+scene.add(winBtn);
+const skipBtn = createSkipBtn();
+skipBtn.position.x = 100;
+skipBtn.position.z = 400;
+skipBtn.material.visible = false;
+scene.add(skipBtn);
+
+const start = clickHandler(rayCaster, [startBtn], canvas,  camera, startCallback);
+document.addEventListener(EventType.CLICK, start);
+
+function displayWinBtn() {
+    winBtn.material.visible = true;
+    skipBtn.material.visible = true;
+}
+
+function hiddenWinBtn() {
+    winBtn.material.visible = false;
+    skipBtn.material.visible = false;
+}
+
+
+function startCallback() {
+
+    startBtn.material.visible = false;
+    document.removeEventListener(EventType.CLICK, start);
+
+    const callback = clickHandler(rayCaster, [winBtn, skipBtn], canvas, camera, function(mesh) {
+        if (mesh === skipBtn) {
+            skipBtn.material.visible = false;
+            winBtn.material.visible = false;
+        } else if (mesh === winBtn) {
+            winAnimate(hands, majConfig);
         }
     });
-});
+
+    document.addEventListener(EventType.CLICK, callback);
+
+    // 起始手牌
+    const hands = initStartMajs(mountains, majList, majConfig);
+    let tween = new TWEEN.Tween();
+    const first = tween;
+    let last;
+    hands.forEach((maj, inx) => {
+        majList.push(maj.children[maj.children.length - 1]);
+        maj.typeName = MajPosition.HAND;
+        if (inx === 13) {
+            maj.position.set(1000, firstHandMajPosition.y, firstHandMajPosition.z)
+            maj.tween = new TWEEN.Tween(maj.position).to({x: firstHandMajPosition.x + (majConfig.width + 1) * inx + 10}, 120)
+                .easing(TWEEN.Easing.Quadratic.InOut);
+            last = maj.tween;
+        } else {
+            maj.position.set(1000, firstHandMajPosition.y, firstHandMajPosition.z)
+            maj.tween = new TWEEN.Tween(maj.position).to({x: firstHandMajPosition.x + (majConfig.width + 1) * inx}, 120)
+                .easing(TWEEN.Easing.Quadratic.InOut);
+        }
+        tween.chain(maj.tween);
+        tween = maj.tween;
+        scene.add(maj);
+    });
+
+    first.start();
+    last.onComplete(function () {
+        hands.forEach((maj2, index) => {
+            const t = new TWEEN.Tween(maj2.rotation).to({x: Math.PI / 2}, 500).easing(TWEEN.Easing.Quadratic.InOut);
+            t.start();
+            if (index === hands.length - 1) {
+                t.onComplete(function () {
+                    sortHands(hands);
+                    resetPosition(hands, majConfig, firstHandMajPosition);
+                    hands.forEach((maj2) => {
+                        const t = new TWEEN.Tween(maj2.rotation).to({x: 0}, 500).easing(TWEEN.Easing.Quadratic.InOut);
+                        t.start();
+                    });
+                    if (win(hands)) {
+                        winAnimate(hands);
+                    }
+                })
+            }
+        });
+    });
 
 
-const rayCaster = new THREE.Raycaster();
+    document.addEventListener(EventType.MOUSEMOVE, majHandMousemoveHandler(rayCaster, majList, hands, canvas, camera, firstHandMajPosition));
 
-document.addEventListener(EventType.MOUSEMOVE,
-    majHandMousemoveHandler(rayCaster, majList, hands, canvas, camera, firstHandMajPosition));
-
-document.addEventListener(EventType.CLICK,
-    function (event) {
+    document.addEventListener(EventType.CLICK, function (event) {
         const discard = majHandMouseClickHandler(rayCaster, majList, hands, scene, canvas, camera, discards, discardConfig, majConfig, mountains, firstHandMajPosition)(event);
         if (!discard) {
             return;
@@ -146,12 +183,14 @@ document.addEventListener(EventType.CLICK,
         majList.push(maj.children[maj.children.length - 1]);
         maj.tween.start();
 
-        hands[hands.length - 1].tween.onComplete(function() {
+        hands[hands.length - 1].tween.onComplete(function () {
             if (win(hands)) {
-                alert('win');
+                winAnimate(hands, majConfig);
             }
         });
     });
+}
+
 
 function render() {
     if (shouldResize(renderer)) {
