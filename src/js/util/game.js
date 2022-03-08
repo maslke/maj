@@ -12,9 +12,6 @@ function convert(hands) {
     const majs = [];
     for (let inx = 0, length = hands.length; inx < length; inx++) {
         let {type, number} = hands[inx].attributes;
-        if (number === 0) {
-            number = 5;
-        }
         majs.push(convertToNumber(type, number));
     }
     majs.sort((a, b) => a - b);
@@ -22,6 +19,9 @@ function convert(hands) {
 }
 
 function convertToNumber(type, number) {
+    if (number === 0) {
+        number = 5;
+    }
     if (type === MajType.M) {
         return number;
     } else if (type === MajType.P) {
@@ -135,4 +135,23 @@ function win(hands) {
     return false;
 }
 
-export {win};
+/**
+ * 在手牌中寻找合适的手牌插入顺序
+ * @param hands
+ * @returns {number}
+ */
+function findFirstGreaterIndex(hands) {
+    const last = hands[hands.length - 1];
+    const numberb = convertToNumber(last.attributes.type, last.attributes.number);
+    let inx = 0;
+    while (inx < hands.length - 1) {
+        const numberA = convertToNumber(hands[inx].attributes.type, hands[inx].attributes.number);
+        if (numberA > numberb) {
+            break;
+        }
+        inx++;
+    }
+    return inx;
+}
+
+export {win, convertToNumber, findFirstGreaterIndex};

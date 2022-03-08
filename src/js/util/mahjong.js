@@ -163,6 +163,7 @@ function initMajs(majConfig, startX, startZ) {
 function shuffle() {
     const majs = [];
     const types = [MajType.M, MajType.P, MajType.S, MajType.W];
+    // 日麻中的红宝牌
     const other = {
         'm': 1,
         'p': 2,

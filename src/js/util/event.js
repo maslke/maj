@@ -1,6 +1,8 @@
 import * as THREE from "three";
 import * as MajPosition from './maj-position';
 import {discard, resetPosition, sortHands} from './mahjong';
+import {findFirstGreaterIndex} from "./game";
+import {TWEEN} from "three/examples/jsm/libs/tween.module.min";
 
 function convertMouseVector(event, canvas) {
     let getBoundingClientRect = canvas.getBoundingClientRect();
@@ -68,18 +70,27 @@ function majHandMouseClickHandler(rayCaster, majList, hands, scene, canvas, came
                     if (hands[inx] === selectedMesh.parent) {
 
                         if (inx === hands.length - 1) {
-                            // 弃牌为最后一张
-                            for (let inx2 = len - 1; inx2 > inx; inx2--) {
-                                hands[inx2].position.copy(hands[inx2 - 1].position);
-                            }
                             hands.splice(inx, 1);
                             break;
                         } else {
-                            // 弃牌为其它手牌
-                            for (let inx2 = len - 1; inx2 > inx; inx2--) {
-                                hands[inx2].position.copy(hands[inx2 - 1].position);
-                            }
                             hands.splice(inx, 1);
+
+                            const last = hands[hands.length - 1];
+                            const index = findFirstGreaterIndex(hands);
+
+                            if (index > inx) {
+                                for (let inx2 = inx; inx2 < index; inx2++) {
+                                    hands[inx2].position.x = vector3.x + (majConfig.width + 1) * inx2;
+                                }
+                            } else if (index < inx) {
+                                for (let inx2 = index; inx2 < inx; inx2++) {
+                                    hands[inx2].position.x = vector3.x + (majConfig.width + 1) * (inx2 + 1);
+                                }
+                            }
+
+                            last.moveTween = new TWEEN.Tween(last.position).to({x: vector3.x + (majConfig.width + 1) * index}, 500).easing(TWEEN.Easing.Quadratic.InOut);
+                            last.moveTween.start();
+                            sortHands(hands);
                             break;
                         }
 
@@ -88,8 +99,7 @@ function majHandMouseClickHandler(rayCaster, majList, hands, scene, canvas, came
                 }
                 discard(selectedMesh.parent, discards, discardConfig, majConfig)
 
-                sortHands(hands);
-                resetPosition(hands, majConfig, vector3);
+
 
                 return true;
             }
