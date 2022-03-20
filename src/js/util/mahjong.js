@@ -65,29 +65,6 @@ function createBtn(src) {
     return plane;
 }
 
-
-function createWinBtn() {
-   return createBtn('../../../static/assets/images/ron.png');
-}
-
-function createSkipBtn() {
-    return createBtn('../../../static/assets/images/skip.png');
-}
-
-function createFinishBtn() {
-    return createBtn('../../../static/assets/images/draw.png');
-}
-
-/**
- * 开始按钮
- * 注：没有找到合适的开始按钮素材，使用开牌按钮来替代
- * @returns {Mesh}
- */
-function createStartBtn() {
-    return createBtn('../../../static/assets/images/open.png');
-}
-
-
 function createMaj(width, height, depth1, depth2, type, number, color = 0xf18f68) {
     const group = new THREE.Group();
     const geometry1 = new THREE.BoxGeometry(width, height, depth1);
@@ -213,6 +190,21 @@ function initStartMajs(majs, majList, majConfig) {
 
 }
 
+function fillStartMajs(majs, majConfig, majConfigB, handsA, handsB) {
+    const {width, height, depth1, depth2} = majConfig;
+    for (let inx = 0; inx < 14; inx++) {
+        let {type, number} = majs.pop();
+        const maj = createMaj(width, height, depth1, depth2, type, number);
+        handsA.push(maj);
+
+        const p = majs.pop();
+        type = p.type;
+        number = p.number;
+        const maj2 = createMaj(majConfigB.width, majConfigB.height, majConfigB.depth1, majConfigB.depth2, type, number);
+        handsB.push(maj2);
+    }
+}
+
 /**
  * 对手牌进行排序
  * @param hands
@@ -285,4 +277,4 @@ function clearMajs(scene) {
     majs.forEach(maj => scene.remove(maj));
 }
 
-export {createTable, createWinBtn, createFinishBtn, createBg, createSkipBtn, createStartBtn, createMaj, initMajs, shuffle, initStartMajs, sortHands, resetPosition, deal, discard, clearMajs, winAnimate};
+export {createTable, createBg, createMaj, initMajs, shuffle, initStartMajs, fillStartMajs, sortHands, resetPosition, deal, discard, clearMajs, winAnimate};

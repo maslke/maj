@@ -12,17 +12,13 @@ import {
     resetPosition,
     deal,
     winAnimate,
-    createWinBtn,
-    createStartBtn,
-    createSkipBtn,
     createBg,
-    createFinishBtn,
-    clearMajs
+    clearMajs, fillStartMajs
 } from "./util/mahjong";
 import * as EventType from "./util/event-type";
 import * as MajPosition from './util/maj-position';
 import {majHandMousemoveHandler, majHandMouseClickHandler, clickHandler} from "./util/event";
-import {win} from "./util/game";
+import {win, startGame} from "./util/game";
 
 const canvas = document.querySelector("#canvas");
 
@@ -59,73 +55,36 @@ scene.add(bg);
 const rayCaster = new THREE.Raycaster();
 
 const majConfig = {
-    width: 40, height: 60, depth1: 6, depth2: 20
+    width: 30, height: 40, depth1: 3, depth2: 15
 }
 
-const startX = -270;
-const startY = majConfig.height / 2 + 1;
-const startZ = 300;
-const firstHandMajPosition = createVector3(startX, startY, startZ);
+const majConfigB = {
+    width: 45, height: 60, depth1: 4.5, depth2: 25
+}
+
+const firstHandMajPosition = createVector3(-200, majConfig.height / 2 + 1, 370);
+const firstHandMajPositionB = createVector3(300, majConfigB.height / 2 + 1, -370);
 
 
 const discardConfig = {
-    x: -1 * majConfig.width * 2.5, y: 0, z: 0, colCount: 6
+    x: -1 * majConfig.width * 4, y: 0, z: 150, colCount: 9
 }
 
-
-const startBtn = createStartBtn();
-scene.add(startBtn);
-const winBtn = createWinBtn();
-winBtn.material.visible = false;
-winBtn.position.x = -100;
-winBtn.position.z = 400;
-scene.add(winBtn);
-const skipBtn = createSkipBtn();
-skipBtn.position.x = 100;
-skipBtn.position.z = 400;
-skipBtn.material.visible = false;
-scene.add(skipBtn);
-const finishBtn = createFinishBtn();
-finishBtn.material.visible = false;
-finishBtn.position.x = 0;
-finishBtn.position.z = 400;
-scene.add(finishBtn);
-
-
-const start = clickHandler(rayCaster, [startBtn], canvas, camera, startCallback);
-document.addEventListener(EventType.CLICK, start);
-
-function displayWinBtn() {
-    winBtn.material.visible = true;
-    skipBtn.material.visible = true;
-}
-
-function hiddenWinBtn() {
-    winBtn.material.visible = false;
-    skipBtn.material.visible = false;
-}
-
-function displayStartBtn() {
-    startBtn.material.visible = true;
-}
-
-function hiddenAllBtn() {
-    hiddenWinBtn();
-    finishBtn.material.visible = false;
-}
-
+startGame('#btnStart', startCallback);
 
 function startCallback() {
+
+    document.querySelector('#btnStart').classList.toggle('nodisplay');
 
     let majList = [];
     let mountains = shuffle();
     const discards = [];
 
-    hiddenAllBtn();
     clearMajs(scene);
 
-    // 起始手牌
-    const hands = initStartMajs(mountains, majList, majConfig);
+    const hands = [], handsB = [];
+
+    fillStartMajs(mountains, majConfig, majConfigB, hands, handsB);
 
     const handClickHandler = function (event) {
         const discard = majHandMouseClickHandler(rayCaster, majList, hands, scene, canvas, camera, discards, discardConfig, majConfig, mountains, firstHandMajPosition)(event);
@@ -137,7 +96,6 @@ function startCallback() {
             mountains.pop();
         }
         if (mountains.length === 0) {
-            finishBtn.material.visible = true;
             document.removeEventListener(EventType.MOUSEMOVE, moveHandler);
             document.removeEventListener(EventType.CLICK, handClickHandler);
             return;
@@ -155,7 +113,6 @@ function startCallback() {
 
         hands[hands.length - 1].tween.onComplete(function () {
             if (win(hands)) {
-                displayWinBtn();
             }
         });
     }
@@ -167,26 +124,6 @@ function startCallback() {
     document.removeEventListener(EventType.MOUSEMOVE, moveHandler);
 
     document.removeEventListener(EventType.CLICK, handClickHandler);
-
-    startBtn.material.visible = false;
-
-    const callback = clickHandler(rayCaster, [winBtn, skipBtn], canvas, camera, function (mesh) {
-        if (!mesh.object.material.visible) {
-            return;
-        }
-        if (mesh.object === skipBtn) {
-            hiddenWinBtn();
-        } else if (mesh.object === winBtn) {
-            winAnimate(hands, majConfig);
-            hiddenWinBtn();
-            displayStartBtn();
-            document.removeEventListener(EventType.MOUSEMOVE, moveHandler);
-            document.removeEventListener(EventType.CLICK, handClickHandler);
-        }
-    });
-
-    document.addEventListener(EventType.CLICK, callback);
-
 
     let tween = new TWEEN.Tween();
     const first = tween;
@@ -208,6 +145,21 @@ function startCallback() {
         tween = maj.tween;
         scene.add(maj);
     });
+
+    let tweenB = new TWEEN.Tween();
+    const firstB = tweenB;
+    handsB.forEach((maj, inx) => {
+        maj.typeName = MajPosition.HAND;
+        maj.position.set(-2000, firstHandMajPositionB.y, firstHandMajPositionB.z);
+        maj.rotation.y = Math.PI;
+        maj.tween = new TWEEN.Tween(maj.position).to({x: firstHandMajPositionB.x - (majConfigB.width + 1) * inx}, 120)
+            .easing(TWEEN.Easing.Quadratic.InOut);
+        tweenB.chain(maj.tween);
+        tweenB = maj.tween;
+        scene.add(maj);
+    })
+    firstB.start();
+
 
     first.start();
     last.onComplete(function () {

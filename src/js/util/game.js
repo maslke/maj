@@ -154,4 +154,9 @@ function findFirstGreaterIndex(hands) {
     return inx;
 }
 
-export {win, convertToNumber, findFirstGreaterIndex};
+function startGame(selecotr, callback) {
+    const btn = document.querySelector(selecotr);
+    btn.addEventListener('click', callback);
+}
+
+export {win, convertToNumber, findFirstGreaterIndex, startGame};
