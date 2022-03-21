@@ -52,7 +52,7 @@ function clickHandler(rayCaster, majList, canvas, camera, callback) {
 }
 
 
-function majHandMouseClickHandler(rayCaster, majList, hands, scene, canvas, camera, discards, discardConfig, majConfig, mountains, vector3) {
+function majHandMouseClickHandler(rayCaster, majList, hands, canvas, camera, discards, discardConfig, majConfig, mountains, vector3) {
     return function (event) {
         const mouse = convertMouseVector(event, canvas);
         rayCaster.setFromCamera(mouse, camera);
@@ -99,12 +99,10 @@ function majHandMouseClickHandler(rayCaster, majList, hands, scene, canvas, came
                 }
                 discard(selectedMesh.parent, discards, discardConfig, majConfig)
 
-
-
-                return true;
+                return selectedMesh.parent;
             }
         }
-        return false;
+        return null;
     }
 }
 

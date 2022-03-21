@@ -1,13 +1,24 @@
 import * as MajType from './maj-type';
-/**
- * 将手牌转换为数字表示形式
- * m1-m9 -> 1-9
- * p1-p9 -> 11-19
- * s1-s9 -> 21-29
- * w -> 31, 33, 35...
- * @param hands
- * @returns {*[]}
- */
+import {TWEEN} from "three/examples/jsm/libs/tween.module.min";
+import {discard, sortHands} from "./mahjong";
+
+
+function autoDiscard(hands, discards, majConfig, vector3, discardConfig, timeout, callback) {
+    setTimeout(function () {
+        console.log(hands.length);
+        const inx = parseInt(Math.random() * hands.length);
+        console.log(inx);
+        const maj = hands[inx];
+        hands.splice(inx, 1);
+        sortHands(hands);
+        for (let i = 0; i < hands.length; i++) {
+            hands[i].position.x =  vector3.x - (majConfig.width + 1) * i;
+        }
+        discard(maj, discards, discardConfig, majConfig, true)
+        callback.call();
+    }, timeout);
+}
+
 function convert(hands) {
     const majs = [];
     for (let inx = 0, length = hands.length; inx < length; inx++) {
@@ -104,7 +115,7 @@ function double7(majs) {
  */
 function all19(majs) {
     const str = majs.toString();
-    const array = [1,9,11,19,21,29,31,33,35,37,39,41,43];
+    const array = [1, 9, 11, 19, 21, 29, 31, 33, 35, 37, 39, 41, 43];
     for (let inx = 0; inx < 13; inx++) {
         array.splice(inx, 0, array[inx]);
         if (array.toString() === str) {
@@ -114,11 +125,12 @@ function all19(majs) {
     }
     return false;
 }
+
 /**
  * win or not ?
  */
 
-function win(hands) {
+function gameIsWin(hands) {
     let majs = convert(hands);
     if (double7(majs) || all19(majs)) return true;
     const doubles = pickDouble(majs);
@@ -135,11 +147,6 @@ function win(hands) {
     return false;
 }
 
-/**
- * 在手牌中寻找合适的手牌插入顺序
- * @param hands
- * @returns {number}
- */
 function findFirstGreaterIndex(hands) {
     const last = hands[hands.length - 1];
     const numberb = convertToNumber(last.attributes.type, last.attributes.number);
@@ -159,4 +166,29 @@ function startGame(selecotr, callback) {
     btn.addEventListener('click', callback);
 }
 
-export {win, convertToNumber, findFirstGreaterIndex, startGame};
+
+function winGame(type, selectable) {
+    document.querySelector('#container2').classList.remove('nodisplay');
+    for (let i = 0; i < document.querySelector('#container2').children.length; i++) {
+        document.querySelector('#container2').children[i].classList.add('nodisplay');
+    }
+    if (type === 0) {
+        document.querySelector('#btnWin').classList.remove('nodisplay');
+    } else {
+        document.querySelector('#btnZimo').classList.remove('nodisplay');
+    }
+    if (selectable) {
+        document.querySelector('#btnSkip').classList.remove('nodisplay');
+    }
+}
+
+function drawGame() {
+    document.querySelector('#container2').classList.remove('nodisplay');
+    for (let i = 0; i < document.querySelector('#container2').children.length; i++) {
+        document.querySelector('#container2').children[i].classList.add('nodisplay');
+    }
+    document.querySelector('#btnDraw').classList.remove('nodisplay');
+
+}
+
+export {gameIsWin, convertToNumber, autoDiscard, findFirstGreaterIndex, startGame, drawGame, winGame};

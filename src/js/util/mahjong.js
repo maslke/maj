@@ -192,10 +192,15 @@ function initStartMajs(majs, majList, majConfig) {
 
 function fillStartMajs(majs, majConfig, majConfigB, handsA, handsB) {
     const {width, height, depth1, depth2} = majConfig;
-    for (let inx = 0; inx < 14; inx++) {
+    for (let inx = 0; inx < 13; inx++) {
         let {type, number} = majs.pop();
         const maj = createMaj(width, height, depth1, depth2, type, number);
         handsA.push(maj);
+        if (inx === 12) {
+            let {type, number} = majs.pop();
+            const maj = createMaj(width, height, depth1, depth2, type, number);
+            handsA.push(maj);
+        }
 
         const p = majs.pop();
         type = p.type;
@@ -203,6 +208,8 @@ function fillStartMajs(majs, majConfig, majConfigB, handsA, handsB) {
         const maj2 = createMaj(majConfigB.width, majConfigB.height, majConfigB.depth1, majConfigB.depth2, type, number);
         handsB.push(maj2);
     }
+
+
 }
 
 /**
@@ -231,22 +238,23 @@ function sortHands(hands) {
     })
 }
 
-/**
- * 弃牌
- * @param maj 丢弃的牌
- * @param discards 弃牌堆
- * @param discardConfig 弃牌配置
- * @param majConfig 麻将大小配置
- */
-function discard(maj, discards, discardConfig, majConfig) {
+
+function discard(maj, discards, discardConfig, majConfig, negative) {
     const {colCount, x, y, z} = discardConfig;
-    const {width, depth1, height} = majConfig;
+    let {width, depth1, height} = majConfig;
 
     const row = parseInt(discards.length / colCount);
     const col = discards.length % colCount;
     discards.push(maj);
-    maj.position.set(x + (width + 1) * col, depth1 + 1, z + (height + 1) * row);
-    maj.rotation.x = - Math.PI / 2;
+    if (arguments.length === 5 && negative) {
+        maj.position.set(x - (width * 0.8 + 1) * col, depth1 + 1, z - (height + 1) * row);
+        maj.rotation.x = Math.PI / 2;
+        maj.scale.set(0.8, 1, 0.8);
+    } else {
+        maj.position.set(x + (width + 1) * col, depth1 + 1, z + (height + 1) * row);
+        maj.rotation.x = - Math.PI / 2;
+    }
+
 }
 
 function deal(majs, majConfig) {
@@ -255,15 +263,13 @@ function deal(majs, majConfig) {
     return createMaj(width, height, depth1, depth2, type, number);
 }
 
-/**
- * 对手牌的位置进行调整
- * @param hands 手牌
- * @param majConfig 单个麻将大小配置
- * @param vector3 手牌的初始位置
- */
-function resetPosition(hands, majConfig, vector3) {
+function resetPosition(hands, majConfig, vector3, negative) {
     for (let inx = 0; inx < hands.length; inx++) {
-        hands[inx].position.x = vector3.x + (majConfig.width + 1) * inx;
+        if (arguments.length === 4 && negative === true) {
+            hands[inx].position.x = vector3.x - (majConfig.width + 1) * inx;
+        } else {
+            hands[inx].position.x = vector3.x + (majConfig.width + 1) * inx;
+        }
     }
 }
 

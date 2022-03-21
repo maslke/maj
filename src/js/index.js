@@ -18,7 +18,7 @@ import {
 import * as EventType from "./util/event-type";
 import * as MajPosition from './util/maj-position';
 import {majHandMousemoveHandler, majHandMouseClickHandler, clickHandler} from "./util/event";
-import {win, startGame} from "./util/game";
+import {autoDiscard, gameIsWin, startGame, winGame} from "./util/game";
 
 const canvas = document.querySelector("#canvas");
 
@@ -45,7 +45,7 @@ scene.add(spotLight);
 
 const orbitControls = createOrbitControls(camera, canvas);
 orbitControls.update();
-orbitControls.enabled = false;
+// orbitControls.enabled = false;
 
 const table = createTable();
 scene.add(table);
@@ -59,7 +59,7 @@ const majConfig = {
 }
 
 const majConfigB = {
-    width: 45, height: 60, depth1: 4.5, depth2: 25
+    width: 45, height: 60, depth1: 4.5, depth2: 20
 }
 
 const firstHandMajPosition = createVector3(-200, majConfig.height / 2 + 1, 370);
@@ -68,6 +68,9 @@ const firstHandMajPositionB = createVector3(300, majConfigB.height / 2 + 1, -370
 
 const discardConfig = {
     x: -1 * majConfig.width * 4, y: 0, z: 150, colCount: 9
+}
+const discardConfigB = {
+    x: majConfigB.width * 3.5, y: 0, z: -150, colCount: 9
 }
 
 startGame('#btnStart', startCallback);
@@ -79,6 +82,7 @@ function startCallback() {
     let majList = [];
     let mountains = shuffle();
     const discards = [];
+    const discardsB = [];
 
     clearMajs(scene);
 
@@ -87,19 +91,37 @@ function startCallback() {
     fillStartMajs(mountains, majConfig, majConfigB, hands, handsB);
 
     const handClickHandler = function (event) {
-        const discard = majHandMouseClickHandler(rayCaster, majList, hands, scene, canvas, camera, discards, discardConfig, majConfig, mountains, firstHandMajPosition)(event);
-        if (!discard) {
+        const discard = majHandMouseClickHandler(rayCaster, majList, hands, canvas, camera, discards, discardConfig, majConfig, mountains, firstHandMajPosition)(event);
+        if (discard === null) {
             return;
         }
-        for (let inx = 0; inx < 3; inx++) {
-            if (mountains.length === 0) break;
-            mountains.pop();
+
+        handsB.push(discard);
+        if (gameIsWin(handsB)) {
+            winAnimate(handsB);
+            winGame(1, false);
         }
+        handsB.pop();
+
         if (mountains.length === 0) {
+            // draw;
             document.removeEventListener(EventType.MOUSEMOVE, moveHandler);
             document.removeEventListener(EventType.CLICK, handClickHandler);
             return;
         }
+        const m = deal(mountains, majConfigB);
+        handsB.push(m);
+        m.rotation.y = Math.PI;
+        m.position.set(-2000, firstHandMajPositionB.y, firstHandMajPositionB.z);
+        m.tween = new TWEEN.Tween(m.position).to({x: firstHandMajPositionB.x - (majConfigB.width + 1) * (handsB.length - 1) + 5}, 500)
+            .easing(TWEEN.Easing.Quadratic.InOut);
+        scene.add(m);
+        m.tween.start();
+
+        autoDiscard(handsB, discardsB, majConfigB, firstHandMajPositionB, discardConfigB, 1000, function() {
+            // do here
+        })
+
 
         const maj = deal(mountains, majConfig);
         hands.push(maj);
@@ -112,7 +134,7 @@ function startCallback() {
         maj.tween.start();
 
         hands[hands.length - 1].tween.onComplete(function () {
-            if (win(hands)) {
+            if (gameIsWin(hands)) {
             }
         });
     }
@@ -159,6 +181,22 @@ function startCallback() {
         scene.add(maj);
     })
     firstB.start();
+    tweenB.onComplete(function() {
+       handsB.forEach((maj2, index) => {
+           const t = new TWEEN.Tween(maj2.rotation).to({x: Math.PI / -2}, 500).easing(TWEEN.Easing.Quadratic.InOut);
+           t.start();
+           if (index === handsB.length - 1) {
+               t.onComplete(function() {
+                   sortHands(handsB);
+                   resetPosition(handsB, majConfigB, firstHandMajPositionB, true);
+                   handsB.forEach((maj2) => {
+                      const t = new TWEEN.Tween(maj2.rotation).to({x: 0}, 500).easing(TWEEN.Easing.Quadratic.InOut);
+                      t.start();
+                   });
+               })
+           }
+       })
+    });
 
 
     first.start();
@@ -174,8 +212,9 @@ function startCallback() {
                         const t = new TWEEN.Tween(maj2.rotation).to({x: 0}, 500).easing(TWEEN.Easing.Quadratic.InOut);
                         t.start();
                     });
-                    if (win(hands)) {
+                    if (gameIsWin(hands)) {
                         winAnimate(hands);
+                        winGame(0, true);
                     }
                 })
             }
