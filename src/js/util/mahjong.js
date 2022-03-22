@@ -6,7 +6,7 @@ import * as MajPosition from './maj-position';
  * 动画效果
  * @param hands
  */
-function winAnimate(hands, majConfig) {
+function winAnimate(hands, maj) {
     hands.forEach((maj, inx) => {
         maj.animate = new TWEEN.Tween(maj.rotation)
             .to({x: -Math.PI / 2}, 200 + 50 * inx).easing(TWEEN.Easing.Quadratic.InOut);
@@ -38,7 +38,7 @@ function createBg() {
     texture.repeat.set(1, 1);
     const material = new THREE.MeshBasicMaterial({
         map: texture,
-        side: THREE.DoubleSide,
+        // side: THREE.DoubleSide,
         transparent: true
     });
 
@@ -190,7 +190,7 @@ function initStartMajs(majs, majList, majConfig) {
 
 }
 
-function fillStartMajs(majs, majConfig, majConfigB, handsA, handsB) {
+function fillStartMajs(majs, majConfig, handsA, handsB) {
     const {width, height, depth1, depth2} = majConfig;
     for (let inx = 0; inx < 13; inx++) {
         let {type, number} = majs.pop();
@@ -205,7 +205,7 @@ function fillStartMajs(majs, majConfig, majConfigB, handsA, handsB) {
         const p = majs.pop();
         type = p.type;
         number = p.number;
-        const maj2 = createMaj(majConfigB.width, majConfigB.height, majConfigB.depth1, majConfigB.depth2, type, number);
+        const maj2 = createMaj(width, height, depth1, depth2, type, number);
         handsB.push(maj2);
     }
 
@@ -247,9 +247,9 @@ function discard(maj, discards, discardConfig, majConfig, negative) {
     const col = discards.length % colCount;
     discards.push(maj);
     if (arguments.length === 5 && negative) {
-        maj.position.set(x - (width * 0.8 + 1) * col, depth1 + 1, z - (height + 1) * row);
+        maj.position.set(x - (width + 1) * col, depth1 + 1, z - (height + 1) * row);
         maj.rotation.x = Math.PI / 2;
-        maj.scale.set(0.8, 1, 0.8);
+        // maj.scale.set(0.8, 0.8, 0.8);
     } else {
         maj.position.set(x + (width + 1) * col, depth1 + 1, z + (height + 1) * row);
         maj.rotation.x = - Math.PI / 2;

@@ -1,21 +1,47 @@
 import * as MajType from './maj-type';
-import {TWEEN} from "three/examples/jsm/libs/tween.module.min";
 import {discard, sortHands} from "./mahjong";
 
 
+function canChi(hands, maj) {
+    let majs = convert(hands);
+    let {type, number} = maj.attributes;
+    const no = convertToNumber(type, number);
+    if (no >= 30) return false;
+
+    const r1 = majs.find(m => m === no - 2);
+    const r2 = majs.find(m => m === no - 1);
+    const r3 = majs.find(m => m === no + 1);
+    const r4 = majs.find(m => m === no + 2);
+    return (r1 && r2) || (r2 && r3) || (r3 && r4);
+}
+
+function canPon(hands, maj) {
+    let majs = convert(hands);
+    let {type, number} = maj.attributes;
+    const no = convertToNumber(type, number);
+    let count = majs.filter(m => m === no).length;
+    return count >= 2;
+}
+
+function canGang(hands, maj) {
+    let majs = convert(hands);
+    let {type, number} = maj.attributes;
+    const no = convertToNumber(type, number);
+    let count = majs.filter(m => m === no).length;
+    return count === 3;
+}
+
 function autoDiscard(hands, discards, majConfig, vector3, discardConfig, timeout, callback) {
     setTimeout(function () {
-        console.log(hands.length);
         const inx = parseInt(Math.random() * hands.length);
-        console.log(inx);
         const maj = hands[inx];
         hands.splice(inx, 1);
         sortHands(hands);
         for (let i = 0; i < hands.length; i++) {
-            hands[i].position.x =  vector3.x - (majConfig.width + 1) * i;
+            hands[i].position.x = vector3.x - (majConfig.width + 1) * i;
         }
         discard(maj, discards, discardConfig, majConfig, true)
-        callback.call();
+        callback(maj);
     }, timeout);
 }
 
@@ -130,8 +156,14 @@ function all19(majs) {
  * win or not ?
  */
 
-function gameIsWin(hands) {
+function canWin(hands, maj) {
     let majs = convert(hands);
+    if (maj) {
+        const {type, number} = maj.attributes;
+        const no = convertToNumber(type, number);
+        majs.push(no);
+        majs.sort((a, b) => a - b);
+    }
     if (double7(majs) || all19(majs)) return true;
     const doubles = pickDouble(majs);
     if (doubles.length === 0) {
@@ -166,6 +198,19 @@ function startGame(selecotr, callback) {
     btn.addEventListener('click', callback);
 }
 
+function hiddenAll() {
+    document.querySelector('#container2').classList.remove('nodisplay');
+    for (let i = 0; i < document.querySelector('#container2').children.length; i++) {
+        document.querySelector('#container2').children[i].classList.add('nodisplay');
+    }
+}
+
+function displayStart() {
+    document.querySelector('#container').classList.remove('nodisplay');
+    for (let i = 0; i < document.querySelector('#container').children.length; i++) {
+        document.querySelector('#container').children[i].classList.remove('nodisplay');
+    }
+}
 
 function winGame(type, selectable) {
     document.querySelector('#container2').classList.remove('nodisplay');
@@ -188,7 +233,25 @@ function drawGame() {
         document.querySelector('#container2').children[i].classList.add('nodisplay');
     }
     document.querySelector('#btnDraw').classList.remove('nodisplay');
-
 }
 
-export {gameIsWin, convertToNumber, autoDiscard, findFirstGreaterIndex, startGame, drawGame, winGame};
+function zimoWinEvent(zimoCallback, skipCallback) {
+    const zimoBtn = document.querySelector('#btnZimo');
+    const skipBtn = document.querySelector('#btnSkip');
+    zimoBtn.removeEventListener('click', zimoCallback);
+    skipBtn.removeEventListener('click', skipCallback);
+    zimoBtn.addEventListener('click', zimoCallback);
+    skipBtn.addEventListener('click', skipCallback);
+}
+
+function ronWinEvent(ronCallback, skipCallback) {
+    const winBtn = document.querySelector('#btnWin');
+    const skipBtn = document.querySelector('#btnSkip');
+    winBtn.removeEventListener('click', ronCallback);
+    skipBtn.removeEventListener('click', skipCallback);
+    winBtn.addEventListener('click', ronCallback);
+    skipBtn.addEventListener('click', skipCallback);
+}
+
+export {canWin, convertToNumber, autoDiscard, findFirstGreaterIndex, startGame, drawGame, winGame, canChi, canPon,
+    canGang, hiddenAll, zimoWinEvent, ronWinEvent, displayStart};

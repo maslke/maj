@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import * as MajPosition from './maj-position';
-import {discard, resetPosition, sortHands} from './mahjong';
-import {findFirstGreaterIndex} from "./game";
+import {discard, resetPosition, sortHands, winAnimate} from './mahjong';
+import {displayStart, findFirstGreaterIndex, hiddenAll} from "./game";
 import {TWEEN} from "three/examples/jsm/libs/tween.module.min";
 
 function convertMouseVector(event, canvas) {
@@ -106,4 +106,16 @@ function majHandMouseClickHandler(rayCaster, majList, hands, canvas, camera, dis
     }
 }
 
-export {majHandMousemoveHandler, majHandMouseClickHandler, convertMouseVector, clickHandler}
+function winCallback(hands) {
+    return function(event) {
+        hiddenAll();
+        winAnimate(hands);
+        displayStart();
+    }
+}
+
+function skipCallback(event) {
+    hiddenAll();
+}
+
+export {majHandMousemoveHandler, majHandMouseClickHandler, convertMouseVector, clickHandler, winCallback, skipCallback}
